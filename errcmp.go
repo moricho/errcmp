@@ -1,11 +1,13 @@
 package errcmp
 
 import (
+	"errors"
+	"fmt"
 	"go/ast"
+	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/inspector"
 )
 
 var Analyzer = &analysis.Analyzer{
@@ -20,18 +22,26 @@ var Analyzer = &analysis.Analyzer{
 const Doc = "errcmp is ..."
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-
-	nodeFilter := []ast.Node{
-		(*ast.Ident)(nil),
+	err := errors.New("error")
+	if err != nil {
+		fmt.Println("error!")
 	}
 
-	inspect.Preorder(nodeFilter, func(n ast.Node) {
-		switch n := n.(type) {
-		case *ast.Ident:
-			_ = n
-		}
-	})
-
+	for _, f := range pass.Files {
+		ast.Inspect(f, func(n ast.Node) bool {
+			if binary, ok := n.(*ast.BinaryExpr); ok {
+				if binary.Op == token.NEQ {
+					switch binary.X.(type) {
+					case *ast.Ident:
+						errName := binary.X.(*ast.Ident).Name
+						if errName == "err" {
+							pass.Reportf(binary.OpPos, "'err != ...' should be 'erros.Is(err, ...)'")
+						}
+					}
+				}
+			}
+			return true
+		})
+	}
 	return nil, nil
 }
