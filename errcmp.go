@@ -1,8 +1,6 @@
 package errcmp
 
 import (
-	"errors"
-	"fmt"
 	"go/ast"
 	"go/token"
 
@@ -22,11 +20,6 @@ var Analyzer = &analysis.Analyzer{
 const Doc = "errcmp is ..."
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	err := errors.New("error")
-	if err != nil {
-		fmt.Println("error!")
-	}
-
 	for _, f := range pass.Files {
 		ast.Inspect(f, func(n ast.Node) bool {
 			if binary, ok := n.(*ast.BinaryExpr); ok {
